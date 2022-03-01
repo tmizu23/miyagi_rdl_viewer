@@ -1,0 +1,786 @@
+<html lang="jp">
+
+<head>
+	<title>宮城県希少種情報 簡易ビューワー</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+	<script src="https://unpkg.com/flatgeobuf@3.21.3/dist/flatgeobuf-geojson.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+	<style>
+		body {
+			margin: 0;
+			padding: 0;
+		}
+
+		#map {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			width: 100%;
+		}
+
+		.leaflet-container {
+			font: 12px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
+		}
+
+		.leaflet-popup-content {
+			width: 300;
+		}
+
+		.popupTable {
+			border-collapse: collapse;
+			table-layout: fixed;
+			font: 12px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
+			user-select: none;
+		}
+
+		.popupTable th,
+		.popupTable td {
+			border: 1px solid #CCCCCC;
+			padding: 5px 10px;
+			text-align: left;
+			/* white-space: nowrap; */
+
+		}
+
+		.popupTable th {
+			background-color: #FFFFFF;
+			text-align: center;
+		}
+
+
+		.popupSave {
+			clear: none;
+			text-align: right;
+			color: #0000ff;
+			user-select: none;
+			margin-right: 10px;
+			font-size: 14px;
+		}
+
+		.popupSave:hover {
+			cursor: pointer;
+		}
+
+		/*custom for menus:*/
+		#menu {
+			vertical-align: top;
+			display: inline-block;
+			width: 19%;
+		}
+
+		.filterselect {
+			font: 12px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
+			margin-top: 10px;
+			margin-left: 10px;
+			margin-right: 0px;
+			margin-bottom: 10px;
+		}
+
+		.filterselect input,
+		.filterselect select {
+			display: block;
+			width: 100%;
+		}
+
+		.filterselect p {
+			font: 12px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
+			margin-top: 0px !important;
+			margin-left: 10px;
+			margin-right: 10px;
+			margin-bottom: 0px;
+		}
+
+		.filterlabel {
+			font: 12px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
+			/*width: 50%;
+    float: right;*/
+			margin-right: 10px;
+			padding: 0px;
+			border: 0px;
+			/*clear: left;*/
+		}
+
+		.filterreset {
+			text-align: right;
+			color: rgb(0, 0, 255);
+			text-decoration: underline;
+
+		}
+
+		.filterreset:hover {
+			color: rgb(6, 143, 255);
+			cursor: pointer;
+		}
+
+		.resetAll {
+			font: 14px/1.5 "Helvetica Neue", Arial, Helvetica, sans-serif;
+			margin-top: 5px;
+		}
+
+		.searchRadius {
+			margin-top: 15px;
+			margin-left: 15px;
+		}
+	</style>
+</head>
+
+<body>
+	<div id='map'></div>
+	<script>
+
+
+		var layer__405;
+		const map = L.map('map').setView([38.3, 141], 10);
+
+		var layer__0 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/blank/{z}/{x}/{y}.png', {
+			opacity: 1.0,
+			attribution: '国土地理院',
+			minZoom: 1,
+			maxZoom: 28,
+			minNativeZoom: 0,
+			maxNativeZoom: 18
+		});
+		map.addLayer(layer__0);
+
+		var layer__1 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}/{y}.png', {
+			opacity: 1.0,
+			attribution: '国土地理院',
+			minZoom: 1,
+			maxZoom: 28,
+			minNativeZoom: 0,
+			maxNativeZoom: 18
+		});
+
+		var layer__2 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/ort/{z}/{x}/{y}.jpg', {
+			opacity: 1.0,
+			attribution: '国土地理院',
+			minZoom: 1,
+			maxZoom: 28,
+			minNativeZoom: 0,
+			maxNativeZoom: 18
+		});
+
+		var layer__3 = L.tileLayer('https://cyberjapandata.gsi.go.jp/xyz/hillshademap/{z}/{x}/{y}.png', {
+			opacity: 1.0,
+			attribution: '国土地理院',
+			minZoom: 1,
+			maxZoom: 28,
+			minNativeZoom: 0,
+			maxNativeZoom: 18
+		});
+
+		const coordsToLatLng = (coords) => new L.LatLng(coords[1], coords[0], coords[2])
+		const pointToLayer = (feature, latlng) => {
+			var text_margin = 15;
+			if (map.getZoom() < 10) {
+				text_margin = 0;
+			}
+			var idstyle = "\""
+				+ "font-size: 14px;"
+				+ "color:#666666;"
+				+ "white-space: nowrap;"
+				+ "margin-top:" + text_margin + "px;"
+				+ "\"";
+			var idAnchor = (feature.geometry.properties['mesh_code'].length - 0.5) / 3 * 16;
+			var myIcon = L.divIcon({
+				iconAnchor: [idAnchor, 10],
+				className: "gsi-div-icon",
+				html: "<div style=" + idstyle + ">" + feature.geometry.properties['mesh_code'] + "</div>"
+			});
+			var zdiv = L.marker(latlng, { icon: myIcon });
+			var zkaklb = [[feature.geometry.properties['rectangle_lb'][0][1], feature.geometry.properties['rectangle_lb'][0][0]],
+			[feature.geometry.properties['rectangle_lb'][1][1], feature.geometry.properties['rectangle_lb'][1][0]]];
+			var zkak = L.rectangle(zkaklb, { color: '#aaaaaa', weight: 0.2, opacity: 0.7, 'fillColor': '#1e90ff', 'fillOpacity': 0 });
+			return L.featureGroup([zdiv, zkak]);
+		}
+
+
+		map.createPane('pane__700');
+		map.getPane('pane__700').style.zIndex = 700;
+		const empty = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADt=";
+		var layer__700 = L.tileLayer(empty, {
+			attribution: '地域メッシュ', minZoom: 6, maxNativeZoom: 14, maxZoom: 18, pane: "pane__700"
+		}).on("tileload", function (event) {
+			var url = "https://maps.gsi.go.jp/xyz/chiikimesh/{z}/{x}/{y}.geojson";
+			fetch(L.Util.template(url, event.coords)).then(a => a.ok ? a.json() : null).then(geojson => {
+				if (!geojson || !this._map) return;
+				const geometry = {
+					type: 'GeometryCollection',
+					geometries: geojson.features.map(feature => ({ ...feature, geometries: [{ ...feature.geometry, properties: feature.properties }], type: 'GeometryCollection' }))
+				};
+				event.tile.layer = L.GeoJSON.geometryToLayer(geometry, { pointToLayer, coordsToLatLng }).addTo(this._map);
+			});
+		}).on("tileunload", function (event) {
+			if (event.tile.layer && this._map)
+				this._map.removeLayer(event.tile.layer);
+		})
+
+		var baseMaps = { "地理院地図地形": layer__3, "地理院地図写真": layer__2, "地理院地図標準": layer__1, "地理院地図白地図": layer__0, };
+		var layerControl = L.control.layers(baseMaps, { "メッシュ": layer__700 }, { collapsed: true }).addTo(map);
+
+
+		map.on('click', function (e) {
+			lat = e.latlng.lat;
+			lon = e.latlng.lng;
+			radius === 0 ? popupInfo(lat, lon) : popupRadiusRangeInfo(lat, lon)
+		});
+
+		var thePoint;
+		var theBuffer;
+		var radius = 0;
+		var infoCSV;
+
+		function popupInfo(lat, lon) {
+			if (thePoint != undefined) map.removeLayer(thePoint);
+			if (theBuffer != undefined) map.removeLayer(theBuffer);
+			thePoint = L.marker([lat, lon]);
+			// const degreePerPixel = 360 * Math.abs(Math.cos(lat * Math.PI / 180)) / Math.pow(2, map.getZoom() + 8);
+			// const popupPos = [lat + Math.random() * degreePerPixel * 50, lon + Math.random() * degreePerPixel * 50]
+			if (layer__405) {
+				layer__405.eachLayer(function (layer) {
+					isInside = turf.booleanPointInPolygon(thePoint.toGeoJSON(), layer.toGeoJSON());
+					if (isInside) layer.openPopup();
+				});
+			}
+		}
+
+		function popupRadiusRangeInfo(lat, lon) {
+			if (thePoint != undefined) {
+				map.removeLayer(thePoint);
+			};
+			if (theBuffer != undefined) {
+				map.removeLayer(theBuffer);
+			};
+			thePoint = L.marker([lat, lon]).addTo(map);
+			const point = turf.point([lon, lat]);
+			const buffered = turf.buffer(point, radius, { units: 'kilometers' });
+			map.createPane('pane__800');
+			map.getPane('pane__800').style.zIndex = 500;
+			theBuffer = L.geoJson(buffered, { color: "#000000", pane: "pane__800" }).addTo(map)
+
+			let target = []
+			if (layer__405 !== undefined) {
+				layer__405.eachLayer(function (layer) {
+					isInside = turf.booleanIntersects(buffered, layer.toGeoJSON());
+					if (isInside) target.push(layer.feature.properties)
+				});
+			}
+			const targetA = target.filter(f => f.rank === "A")
+			const targetB = target.filter(f => f.rank === "B")
+			const distinctedA = getDistinctedObjects(targetA)
+			const summarizeA = getSummarize(distinctedA)
+			const distinctedB = getDistinctedObjects(targetB)
+
+			const sortedObject = getSortedObject(summarizeA, distinctedB)
+			infoCSV = ""
+			infoCSV = infoCSV + `作成日時 ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}` + "\r\n"
+			infoCSV = infoCSV + `中心座標（緯度、経度） ${lat},${lon}` + "\r\n"
+			infoCSV = infoCSV + `検索半径 ${radius}km` + "\r\n"
+			infoCSV = infoCSV + "\r\n"
+			infoCSV = infoCSV + "検索結果" + "\r\n"
+			infoCSV = infoCSV + "=================================" + "\r\n"
+			infoCSV = infoCSV + "分類群,カテゴリ,種名" + "\r\n"
+			sortedObject.forEach(obj => {
+				infoCSV = infoCSV + `${obj.class},${obj.category},${obj.name}` + "\r\n"
+			})
+
+			let tbody = ""
+			sortedObject.forEach(obj => {
+				tbody = tbody + `<tr><td>${obj.class}</td><td>${obj.category}</td><td>${obj.name}</td></tr>`
+			})
+
+			const saveContent = '<div class="popupSave" onclick="saveInfo()">保存</div>'
+			const popupContent = `${saveContent}
+					<table class="popupTable">
+                    <tr>
+                    <th>分類群</th><th>カテゴリ</th><th>種名</th>
+                    </tr>
+					${tbody}
+					</table>
+					`
+			thePoint.bindPopup(popupContent, { maxHeight: 300 }).openPopup()
+		}
+
+		const saveInfo = () => {
+			const now = new Date();
+			const fileName = `宮城県希少種情報提供${now.getFullYear()}${("0" + (now.getMonth() + 1)).slice(-2)}${("0" + now.getDate()).slice(-2)}${now.getHours()}${now.getMinutes()}.txt`
+			let blob = new Blob([infoCSV], { type: "text/plan" });
+			let link = document.createElement('a');
+			link.href = URL.createObjectURL(blob);
+			link.download = fileName;
+			link.click();
+		}
+		const getSortedObject = (targetA, targetB) => {
+
+			const classList = ["哺乳類", "両生類", "爬虫類", "鳥類", "昆虫類", "汽水・淡水魚類", "淡水貝類", "海岸動物", "植物", "蘚苔類", "植物群落"]
+			const categoryList = ["EX", "EW", "CR+EN", "VU", "NT", "DD", "LP", "要注目種", "D", "4", "3", "2", "1"]
+			let sortedObject = []
+			classList.forEach(cls => {
+				categoryList.forEach(cat => {
+					const resultB = targetB.filter(a => a.class === cls && a.category === cat)
+					if (resultB.length > 0) sortedObject.push(...resultB)
+					const resultA = targetA.filter(a => a.class === cls && a.category === cat)
+					if (resultA.length > 0) sortedObject.push(...resultA)
+				})
+			})
+			return sortedObject
+		}
+
+		const getSummarize = (target) => {
+			let counter = {}
+			target.forEach(obj => {
+				const key = JSON.stringify({ class: obj.class, category: obj.category })
+				counter[key] = (counter[key] || 0) + 1
+			})
+			const summarize = Object.keys(counter).map((key, idx) => {
+				return { ...JSON.parse(key), name: `その他 ${counter[key]}種` }
+			})
+			return summarize
+		}
+
+		const getDistinctedObjects = (target) => {
+			return target.filter((value, index, self) =>
+				index === self.findIndex((t) => (
+					t.class === value.class && t.name === value.name && t.category === value.category
+				))
+			)
+		}
+		const getUniqueValue = (features, attribute, classNames, reverse = false) => {
+			let values = []
+			if (classNames.length === 0) {
+				values = features.map(feature => feature.properties[attribute]);
+			} else {
+				values = features.filter((feature, idx) => -1 !== classNames.findIndex(cls => feature.properties["class"] === cls)).map(feature => feature.properties[attribute]);
+			}
+
+			let uniquValues = Array.from(new Set(values)).sort();
+			if (reverse) uniquValues.reverse()
+			return uniquValues
+		}
+
+		const getCategoryColors = () => {
+			const colors = {
+				"EX": "rgba(200, 200, 200, 0.7)",
+				"EW": "rgba(80, 80, 80, 0.7)",
+				"CR+EN": "rgba(255, 0, 0, 0.7)",
+				"VU": "rgba(162, 0, 255, 0.7)",
+				"NT": "rgba(255, 136, 0, 0.7)",
+				"DD": "rgba(0, 0, 255, 0.7)",
+				"LP": "rgba(0, 255, 0, 0.7)",
+				"要注目種": "rgba(220, 220, 0, 0.7)",
+				"D": "rgba(200, 200, 200, 0.7)",
+				"4": "rgba(255, 0, 0, 0.7)",
+				"3": "rgba(162, 0, 255, 0.7)",
+				"2": "rgba(255, 136, 0, 0.7)",
+				"1": "rgba(220, 220, 0, 0.7)"
+			};
+			return colors;
+		}
+
+		function style__405(feature, colors) {
+			const key = String(feature.properties['category'])
+			return {
+				pane: 'pane__405',
+				stroke: false,
+				fill: true,
+				fillOpacity: 1,
+				fillColor: colors[key],
+				interactive: true,
+			}
+		}
+
+		function pop__405(feature, layer) {
+			var popupContent = '<table class="popupTable">\
+                    <tr>\
+                        <th scope="row" width="65">分類</th>\
+                        <td>' + feature.properties['class'] + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">種名</th>\
+                        <td>' + feature.properties['name'] + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">カテゴリ</th>\
+                        <td>' + feature.properties['category'] + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">秘匿</th>\
+                        <td>' + feature.properties['rank'] + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">確認年</th>\
+                        <td>' + feature.properties['year'] + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">2次</th>\
+                        <td>' + feature.properties['mesh2R'] + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">3次</th>\
+                        <td>' + feature.properties['mesh3R'] + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">文献</th>\
+                        <td>' + feature.properties['reference'] + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">発行</th>\
+                        <td>' + feature.properties['issue'] + '</td>\
+                    </tr>\
+                </table>';
+			layer.bindPopup(popupContent, { autoClose: false, maxHeight: 300 })
+			layer.off('click');
+			layer.on('click', function () { return; });
+		}
+
+
+		const drawData = async (allFeatures) => {
+			const uniqueNames = getUniqueValue(allFeatures, "name", []);
+			const uniqueYears = getUniqueValue(allFeatures, "year", [], true);
+			const uniqueReferences = getUniqueValue(allFeatures, "reference", []);
+			//const colors = getRandomColors(uniqueNames);
+			const colors = getCategoryColors();
+
+			map.createPane('pane__405');
+			map.getPane('pane__405').style.zIndex = 405;
+			layer__405 = new L.geoJson(allFeatures, {
+				attribution: '',
+				interactive: true,
+				dataVar: 'allFeatures',
+				layerName: 'layer__405',
+				pane: 'pane__405',
+				onEachFeature: pop__405,
+				style: (feature) => style__405(feature, colors),
+			});
+			map.addLayer(layer__405);
+
+			layerControl.addOverlay(layer__405, "データ")
+
+			buildFilter(uniqueNames, uniqueYears, uniqueReferences);
+		}
+
+		let selectedClass = []
+		const changeFilterContents = () => {
+			const uniqueNames = getUniqueValue(allFeatures, "name", selectedClass);
+			const uniqueYears = getUniqueValue(allFeatures, "year", selectedClass, true);
+			const uniqueReferences = getUniqueValue(allFeatures, "reference", selectedClass);
+
+			let name_options_str = "";
+			uniqueNames.forEach(name =>
+				name_options_str += `<option value="${name}">${name}</option>`
+			)
+			document.getElementById("sel_name").innerHTML = name_options_str;
+
+			let year_options_str = "";
+			uniqueYears.forEach(year =>
+				year_options_str += `<option value="${year}">${year}</option>`
+			)
+			document.getElementById("sel_year").innerHTML = year_options_str;
+
+			var reference_options_str = "";
+			uniqueReferences.forEach(reference =>
+				reference_options_str += `<option value="${reference}">${reference}</option>`
+			)
+			document.getElementById("sel_reference").innerHTML = reference_options_str;
+		}
+
+		const buildFilter = async (uniqueNames, uniqueYears, uniqueReferences) => {
+			var Filters = { "class": "str", "name": "str", "category": "str", "rank": "str", "year": "str", "reference": "str" };
+			function filterFunc() {
+				map.eachLayer(function (lyr) {
+					if ("options" in lyr && "dataVar" in lyr["options"]) {
+						features = [...this[lyr["options"]["dataVar"]]];
+						try {
+							for (key in Filters) {
+								keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+								if (Filters[key] == "str" || Filters[key] == "bool") {
+									var selection = [];
+									var options = document.getElementById("sel_" + keyS).options
+									for (var i = 0; i < options.length; i++) {
+										if (options[i].selected) selection.push(...options[i].value.split(","));
+									}
+									if (key === "class") {
+										selectedClass = selection;
+									}
+									try {
+										if (key in features[0].properties) {
+											for (i = features.length - 1;
+												i >= 0; --i) {
+												if (selection.indexOf(
+													features[i].properties[key]) < 0
+													&& selection.length > 0) {
+													features.splice(i, 1);
+												}
+											}
+										}
+									} catch (err) {
+									}
+								}
+
+							}
+						} catch (err) {
+						}
+						this[lyr["options"]["layerName"]].clearLayers();
+						this[lyr["options"]["layerName"]].addData(features);
+					}
+				})
+			}
+
+
+			const addFilter = (attributeName, options_str, sel_size, alias_name = undefined) => {
+				document.getElementById("menu").appendChild(document.createElement("div"));
+				var div_ = document.createElement('div');
+				div_.id = `div_${attributeName}`;
+				div_.className = "filterselect";
+				document.getElementById("menu").appendChild(div_);
+				var lab_ = document.createElement('div');
+				lab_.innerHTML = `${alias_name ? alias_name : attributeName}`;
+				lab_.className = 'filterlabel';
+				div_.appendChild(lab_);
+
+				sel_ = document.createElement('select');
+				sel_.multiple = true;
+				sel_.size = sel_size > 10 ? 10 : sel_size;
+				sel_.id = `sel_${attributeName}`;
+				sel_.onchange = function () {
+					filterFunc()
+					if (attributeName === "class") changeFilterContents();
+				};
+				sel_.innerHTML = options_str;
+				div_.appendChild(sel_);
+				var reset_ = document.createElement('div');
+				reset_.innerHTML = 'リセット';
+				reset_.className = 'filterreset';
+				reset_.onclick = function () {
+					var options = document.getElementById(`sel_${attributeName}`).options;
+					for (var i = 0; i < options.length; i++) {
+						options[i].selected = false;
+					}
+					filterFunc();
+					selectedClass = []
+					if (attributeName === "class") changeFilterContents();
+				};
+				div_.appendChild(reset_);
+			}
+
+			const addResetAll = () => {
+				document.getElementById("menu").appendChild(
+					document.createElement("div"));
+				var div_ = document.createElement('div');
+				div_.id = `div_resetAll`;
+				div_.className = "resetAll";
+				document.getElementById("menu").appendChild(div_);
+
+				var reset_ = document.createElement('div');
+				reset_.innerHTML = '全リセット';
+				reset_.className = 'filterreset';
+				reset_.onclick = function () {
+					Object.keys(Filters).forEach(attributeName => {
+						var options = document.getElementById(`sel_${attributeName}`).options;
+						for (var i = 0; i < options.length; i++) {
+							options[i].selected = false;
+						}
+						filterFunc();
+						selectedClass = []
+						changeFilterContents();
+					})
+				};
+				div_.appendChild(reset_);
+			}
+
+			const searchRadius = (value) => {
+				radius = value
+			}
+			const addSelectRadius = () => {
+				document.getElementById("menu").appendChild(
+					document.createElement("div"));
+				var div_ = document.createElement('div');
+				div_.id = `div_searchRadius`;
+				div_.className = "searchRadius";
+				document.getElementById("menu").appendChild(div_);
+				var input_radio0 = document.createElement("input");
+				var input_radio1 = document.createElement("input");
+				var input_radio2 = document.createElement("input");
+				var label0 = document.createElement("label");
+				var label1 = document.createElement("label");
+				var label2 = document.createElement("label");
+
+				input_radio0.type = "radio";
+				input_radio1.type = "radio";
+				input_radio2.type = "radio";
+				input_radio0.name = "my_radio";
+				input_radio1.name = "my_radio";
+				input_radio2.name = "my_radio";
+				input_radio0.checked = true;
+				input_radio0.onclick = () => searchRadius(0)
+				input_radio1.onclick = () => searchRadius(0.5)
+				input_radio2.onclick = () => searchRadius(5)
+				label0.appendChild(input_radio0);
+				label1.appendChild(input_radio1);
+				label2.appendChild(input_radio2);
+				label0.appendChild(document.createTextNode("指定"));
+				label1.appendChild(document.createTextNode("500m圏"));
+				label2.appendChild(document.createTextNode("5km圏"));
+				div_.appendChild(label0);
+				div_.appendChild(label1);
+				div_.appendChild(label2);
+			}
+
+			var mapDiv = document.getElementById('map');
+			mapDiv.style.width = "80%";
+			var row = document.createElement('div');
+			row.className = "row";
+			row.id = "all";
+			row.style.height = "100%";
+			var col1 = document.createElement('div');
+			col1.className = "col9";
+			col1.id = "mapWindow";
+			col1.style.height = "99%";
+			col1.style.width = "80%";
+			col1.style.display = "inline-block";
+			var col2 = document.createElement('div');
+			col2.className = "col3";
+			col2.id = "menu";
+			col2.style.display = "inline-block";
+			mapDiv.parentNode.insertBefore(row, mapDiv);
+			document.getElementById("all").appendChild(col1);
+			document.getElementById("all").appendChild(col2);
+			col1.appendChild(mapDiv)
+
+
+			addSelectRadius()
+			addResetAll()
+			let class_options_str = "";
+
+			class_options_str += '<option value="哺乳類">哺乳類</option>';
+			class_options_str += '<option value="両生類">両生類</option>';
+			class_options_str += '<option value="爬虫類">爬虫類</option>';
+			class_options_str += '<option value="鳥類">鳥類</option>';
+			class_options_str += '<option value="昆虫類">昆虫類</option>';
+			class_options_str += '<option value="汽水・淡水魚類">汽水・淡水魚類</option>';
+			class_options_str += '<option value="淡水貝類">淡水貝類</option>';
+			class_options_str += '<option value="海岸動物">海岸動物</option>';
+			class_options_str += '<option value="植物">植物</option>';
+			class_options_str += '<option value="蘚苔類">蘚苔類</option>';
+			class_options_str += '<option value="植物群落">植物群落</option>';
+
+			addFilter("class", class_options_str, 10, "分類群")
+
+			let category_options_str = "";
+			category_options_str += '<option value="EX,D">&#x2b1c EX(D)</option>';
+			category_options_str += '<option value="EW">&#x2b1b EW</option>';
+			category_options_str += '<option value="CR+EN,4">&#x1f7e5 CR+EN(4)</option>';
+			category_options_str += '<option value="VU,3">&#x1f7ea VU(3)</option>';
+			category_options_str += '<option value="NT,2">&#x1f7e7 NT(2)</option>';
+			category_options_str += '<option value="DD">&#x1f7e6 DD</option>';
+			category_options_str += '<option value="LP">&#x1f7e9 LP</option>';
+			category_options_str += '<option value="要注目種,1">&#x1f7e8 要注目種(1)</option>';
+			addFilter("category", category_options_str, 8, "カテゴリ ()は植物群落")
+
+			let name_options_str = "";
+			uniqueNames.forEach(name =>
+				name_options_str += `<option value="${name}">${name}</option>`
+			)
+			addFilter("name", name_options_str, 10, "種名")
+
+			let rank_options_str = "";
+			rank_options_str += '<option value="A">A</option>';
+			rank_options_str += '<option value="B">B</option>';
+			addFilter("rank", rank_options_str, 2, "秘匿")
+
+			let year_options_str = "";
+			uniqueYears.forEach(year =>
+				year_options_str += `<option value="${year}">${year}</option>`
+			)
+			addFilter("year", year_options_str, uniqueYears.length, "確認年")
+
+			var reference_options_str = "";
+			uniqueReferences.forEach(reference =>
+				reference_options_str += `<option value="${reference}">${reference}</option>`
+			)
+			addFilter("reference", reference_options_str, uniqueReferences.length, "文献")
+
+		}
+
+
+		async function* readLines(readableStream, funcYield = (x) => x) {
+			const reader = readableStream.getReader();
+			const decoder = new TextDecoder('utf-8');
+			let remaining = "";
+			try {
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) return;
+					const lines = (remaining + decoder.decode(value)).split("\n");
+					remaining = lines.pop();
+					yield lines.map(funcYield);
+				}
+			}
+			finally {
+				reader.releaseLock();
+			}
+		}
+
+		async function* bunchIterator(iter, numBunch = 1) {
+			let bunch = [];
+			for await (let e of iter) {
+				bunch.push(e);
+				if (bunch.length >= numBunch) { yield bunch; bunch = []; }
+			}
+			yield bunch;
+		}
+
+
+		const getIterator = (stream, name) => {
+			const extension = name.split('.').pop();
+			switch (extension) {
+				case "jsonl":
+				case "geojsonl":
+					return readLines(stream, JSON.parse);
+				case "fgb":
+					const numBunch = 8;
+					return bunchIterator(flatgeobuf.deserialize(stream), numBunch);
+			}
+		}
+
+		var allFeatures = [];
+
+		const loadData = async (iter) => {
+			if (iter == undefined) return;
+
+			const wait = () => new Promise(resolve => setTimeout(resolve, 0));
+
+			for await (const features of iter) {
+				await wait();
+				allFeatures = [...allFeatures, ...features]
+			}
+			allFeatures.sort((a, b) => a.properties.name.localeCompare(b.properties.name))
+			drawData(allFeatures);
+		};
+
+		const setDropArea = (area) => {
+
+			const draw = file => {
+				if (allFeatures.length > 0) {
+					window.alert("ページをリロードしてから追加してください")
+					return false
+				}
+				return loadData(getIterator(file.stream(), file.name));
+			}
+			area.ondragover = () => false;
+			area.ondrop = event => {
+				[...event.dataTransfer.files].forEach(draw);
+				return false;
+			};
+
+		}
+		setDropArea(document.getElementById('map'));
+
+	</script>
+</body>
+
+</html>
