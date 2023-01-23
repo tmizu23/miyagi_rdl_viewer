@@ -25,7 +25,7 @@ for /f %%i in ('dir /b /s *.csv') do (
 REM data.csvとmesh2R,mesh3Rを結合してall.fgbを作成
 
 REM QGISの場所を指定してください
-call "C:\Program Files\QGIS 3.16.16\bin\o4w_env.bat"
+call "C:\Program Files\QGIS 3.28.1\bin\o4w_env.bat"
 
 cd %~dp0
 nkf32.exe -w8 --overwrite data.csv

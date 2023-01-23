@@ -317,7 +317,7 @@
 		const getSortedObject = (targetA, targetB) => {
 
 			const classList = ["哺乳類", "両生類", "爬虫類", "鳥類", "昆虫類", "汽水・淡水魚類", "淡水貝類", "海岸動物", "植物", "蘚苔類", "植物群落"]
-			const categoryList = ["EX", "EW", "CR+EN", "VU", "NT", "DD", "LP", "要注目種", "D", "4", "3", "2", "1"]
+			const categoryList = ["EX", "EW", "CR+EN", "VU", "NT", "DD", "LP", "要注目種", "D", "4", "3", "2", "1", "未選定"]
 			let sortedObject = []
 			classList.forEach(cls => {
 				categoryList.forEach(cat => {
@@ -376,7 +376,8 @@
 				"4": "rgba(255, 0, 0, 0.7)",
 				"3": "rgba(162, 0, 255, 0.7)",
 				"2": "rgba(255, 136, 0, 0.7)",
-				"1": "rgba(220, 220, 0, 0.7)"
+				"1": "rgba(220, 220, 0, 0.7)",
+				"未選定": "rgba(200, 200, 200, 0.7)"
 			};
 			return colors;
 		}
@@ -679,7 +680,8 @@
 			category_options_str += '<option value="DD">&#x1f7e6 DD</option>';
 			category_options_str += '<option value="LP">&#x1f7e9 LP</option>';
 			category_options_str += '<option value="要注目種,1">&#x1f7e8 要注目種(1)</option>';
-			addFilter("category", category_options_str, 8, "カテゴリ ()は植物群落")
+			category_options_str += '<option value="未選定">&#x2b1c 未選定</option>';
+			addFilter("category", category_options_str, 9, "カテゴリ ()は植物群落")
 
 			let name_options_str = "";
 			uniqueNames.forEach(name =>
