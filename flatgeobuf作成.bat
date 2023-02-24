@@ -8,7 +8,7 @@ REM dataフォルダの中のcsvファイルを結合してdata.csvを作成
 set /a counter=0
 
 del data.csv
-for /f %%i in ('dir /b /s *.csv') do (
+for /f %%i in ('dir /b *.csv') do (
 
     echo %%i
     if !counter!==0 (
