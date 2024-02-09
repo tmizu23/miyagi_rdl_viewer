@@ -34,8 +34,8 @@ ogr2ogr -f FlatGeobuf -dialect sqlite -sql "select distinct * from mesh3R join '
 ogr2ogr -f FlatGeobuf  -where class='鳥類' 鳥類.fgb 全分類.fgb
 ogr2ogr -f FlatGeobuf  -where class='汽水・淡水魚類' 汽水・淡水魚類.fgb 全分類.fgb
 ogr2ogr -f FlatGeobuf  -where class='哺乳類' 哺乳類.fgb 全分類.fgb
-ogr2ogr -f FlatGeobuf  -where class='両生類' 両生類.fgb 全分類.fgb
-ogr2ogr -f FlatGeobuf  -where class='爬虫類' 爬虫類.fgb 全分類.fgb
+ogr2ogr -f FlatGeobuf  -where class='両生綱' 両生綱.fgb 全分類.fgb
+ogr2ogr -f FlatGeobuf  -where class='爬虫綱' 爬虫綱.fgb 全分類.fgb
 ogr2ogr -f FlatGeobuf  -where class='植物' 植物.fgb 全分類.fgb
 ogr2ogr -f FlatGeobuf  -where class='蘚苔類' 蘚苔類.fgb 全分類.fgb
 ogr2ogr -f FlatGeobuf  -where class='淡水貝類' 淡水貝類.fgb 全分類.fgb
